@@ -27,21 +27,28 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      # Install Gradle via SDKMAN and generate a wrapper (in case the repo doesn't have one)
-      - name: Install Gradle 8.7 & generate wrapper
+      # 📦 Install Gradle 8.7 (official ZIP) and add to PATH
+      - name: Install Gradle 8.7 (no SDKMAN)
         run: |
-          curl -s "https://get.sdkman.io" | bash
-          source "$HOME/.sdkman/bin/sdkman-init.sh"
-          sdk install gradle 8.7
-          cd Gen10Radio_project
-          gradle wrapper --gradle-version 8.7
+          curl -sL https://services.gradle.org/distributions/gradle-8.7-bin.zip -o gradle.zip
+          unzip -q gradle.zip -d $HOME/gradle
+          echo "$HOME/gradle/gradle-8.7/bin" >> $GITHUB_PATH
 
+      # 🧰 Generate Gradle Wrapper inside the subfolder project
+      - name: Generate wrapper
+        run: |
+          cd Gen10Radio_project
+          gradle -v
+          gradle wrapper --gradle-version 8.7
+          chmod +x gradlew
+
+      # 🏗️ Build APK using the wrapper
       - name: Build Debug APK
         run: |
           cd Gen10Radio_project
-          ./gradlew --version
           ./gradlew assembleDebug
 
+      # 📤 Upload artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
