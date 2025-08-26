@@ -1,0 +1,49 @@
+name: Android CI (Debug APK)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept SDK licenses & install packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      # Install Gradle via SDKMAN and generate a wrapper (in case the repo doesn't have one)
+      - name: Install Gradle 8.7 & generate wrapper
+        run: |
+          curl -s "https://get.sdkman.io" | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          sdk install gradle 8.7
+          cd Gen10Radio_project
+          gradle wrapper --gradle-version 8.7
+
+      - name: Build Debug APK
+        run: |
+          cd Gen10Radio_project
+          ./gradlew --version
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gen10Radio-debug-apk
+          path: Gen10Radio_project/app/build/outputs/apk/debug/app-debug.apk
